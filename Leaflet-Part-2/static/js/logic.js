@@ -5,20 +5,49 @@ let basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", 
 
 // OPTIONAL: Step 2
 // Create the 'street' tile layer as a second background of the map
+let satellite = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
+  attribution: "© OpenTopoMap contributors"
+});
 
+let grayscale = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+  attribution: "© CartoDB"
+});
+
+let outdoors = L.tileLayer("https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
+  attribution: "© OSM Humanitarian"
+});
+
+
+// OPTIONAL: Step 2
+// Create the layer groups, base maps, and overlays for our two sets of data, earthquakes and tectonic_plates.
+let earthquakes = new L.LayerGroup();
+let tectonicPlates = new L.LayerGroup();
+
+let baseMaps = {
+  "Satellite": satellite,
+  "Grayscale": grayscale,
+  "Outdoors": outdoors
+};
+
+let overlayMaps = {
+  "Earthquakes": earthquakes,
+  "Tectonic Plates": tectonicPlates
+};
 
 // Create the map object with center and zoom options.
 let map = L.map("map", {
-  center: [37.09, -95.71],  // ABD merkezli
-  zoom: 4
+  center: [37.09, -95.71], 
+  zoom: 4,
+  layers: [satellite, earthquakes]
 });
 
 // Then add the 'basemap' tile layer to the map.
 basemap.addTo(map);
-// OPTIONAL: Step 2
-// Create the layer groups, base maps, and overlays for our two sets of data, earthquakes and tectonic_plates.
-// Add a control to the map that will allow the user to change which layers are visible.
 
+// Add a control to the map that will allow the user to change which layers are visible.
+L.control.layers(baseMaps, overlayMaps, {
+  collapsed: false
+}).addTo(map);
 
 // Make a request that retrieves the earthquake geoJSON data.
 d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson").then(function (data) {
@@ -72,7 +101,7 @@ d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geoj
     }
   // OPTIONAL: Step 2
   // Add the data to the earthquake layer instead of directly to the map.
-  }).addTo(map);
+  }).addTo(earthquakes);
 
   // Create a legend control object.
   let legend = L.control({
@@ -111,9 +140,10 @@ d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geoj
   // Make a request to get our Tectonic Plate geoJSON data.
   d3.json("https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json").then(function (plate_data) {
     // Save the geoJSON data, along with style information, to the tectonic_plates layer.
-
-
+    L.geoJson(plate_data, {
+      color: "orange",
+      weight: 2
     // Then add the tectonic_plates layer to the map.
-
+    }).addTo(tectonicPlates);
   });
 });
